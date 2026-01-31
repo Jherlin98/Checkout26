@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯Checkout 26🎯</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen overflow-hidden font-sans antialiased selection:bg-blue-500 selection:text-white flex flex-col">
+    <div class="w-full h-full flex flex-col p-2 md:p-4">
+        <div class="relative flex items-center justify-center mb-2 md:mb-4 shrink-0">
+            <a href="/" class="absolute left-0 text-slate-500 hover:text-slate-300 text-xs md:text-sm font-bold transition-colors uppercase tracking-wider">New Game</a>
+            <h1 class="text-2xl md:text-3xl font-bold text-blue-400 tracking-tight">🎯 Checkout 26</h1>
+        </div>
+        <main class="flex-1 min-h-0 flex flex-col">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

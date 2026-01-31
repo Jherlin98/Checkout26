@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Custom styles to ensure radio buttons work without rebuilding CSS */
+    .radio-input {
+        display: none;
+    }
+    .radio-input:checked + .radio-box {
+        background-color: #2563eb; /* bg-blue-600 */
+        border-color: #3b82f6;     /* border-blue-500 */
+        color: white;              /* text-white */
+        box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.2); /* shadow-blue-900/20 */
+    }
+</style>
+<div class="bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700">
+    <form action="/" method="POST" class="space-y-6">
+        <div>
+            <label for="names" class="block text-sm font-medium text-slate-400 mb-2">Player Names (comma separated)</label>
+            <textarea name="names" id="names" placeholder="Player 1, Player 2..." rows="3"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none">Player 1</textarea>
+        </div>
+        
+        <div>
+            <div class="block text-sm font-medium text-slate-400 mb-2">Game Mode</div>
+            <div class="grid grid-cols-2 gap-3">
+                <label class="cursor-pointer">
+                    <input type="radio" name="game_type" value="x01" class="radio-input" checked onchange="toggleSettings()">
+                    <div class="radio-box w-full bg-slate-900 border border-slate-700 rounded-lg py-3 text-center font-bold text-slate-300 transition-all hover:bg-slate-700">
+                        X01
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="game_type" value="practice_20" class="radio-input" onchange="toggleSettings()">
+                    <div class="radio-box w-full bg-slate-900 border border-slate-700 rounded-lg py-3 text-center font-bold text-slate-300 transition-all hover:bg-slate-700">
+                        Practice 20
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div id="practice-settings" class="hidden">
+            <label for="max_darts" class="block text-sm font-medium text-slate-400 mb-2">Number of Darts</label>
+            <input type="number" name="max_darts" id="max_darts" value="99" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
+        </div>
+
+        <div id="x01-settings">
+            <div class="block text-sm font-medium text-slate-400 mb-2">Starting Score</div>
+            <div class="grid grid-cols-2 gap-3">
+                {% for score in [501, 301] %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="start_score" value="{{ score }}" class="radio-input" {{ 'checked' if score == 501 }}>
+                    <div class="radio-box w-full bg-slate-900 border border-slate-700 rounded-lg py-3 text-center font-bold text-slate-300 transition-all hover:bg-slate-700">
+                        {{ score }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-6 block text-sm font-medium text-slate-400 mb-2">Match Length</div>
+            <div class="grid grid-cols-3 gap-3">
+                {% for legs in [1, 3, 5, 7, 9, 11] %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="best_of" value="{{ legs }}" class="radio-input" {{ 'checked' if legs == 1 }}>
+                    <div class="radio-box w-full bg-slate-900 border border-slate-700 rounded-lg py-3 text-center font-bold text-slate-300 transition-all hover:bg-slate-700">
+                        {% if legs == 1 %}
+                            1 Leg
+                        {% else %}
+                            Best of {{ legs }}
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg shadow-blue-900/20">Start Game</button>
+    </form>
+</div>
+
+<script>
+    function toggleSettings() {
+        const isPractice = document.querySelector('input[name="game_type"][value="practice_20"]').checked;
+        if (isPractice) {
+            document.getElementById('x01-settings').classList.add('hidden');
+            document.getElementById('practice-settings').classList.remove('hidden');
+        } else {
+            document.getElementById('x01-settings').classList.remove('hidden');
+            document.getElementById('practice-settings').classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

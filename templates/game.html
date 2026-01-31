@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-4 h-full w-full">
+    <!-- Score Card -->
+    <div class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700 text-center relative overflow-hidden flex flex-col shrink-0 lg:w-1/3">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+        
+        <!-- Scoreboard (Multiplayer) -->
+        {% if match.players|length > 1 %}
+        <div class="flex flex-row gap-2 overflow-x-auto shrink-0 mb-4 pb-2 border-b border-slate-700/50">
+            {% for p in match.players %}
+            <div class="flex-none p-2 rounded-lg border min-w-[100px] {{ 'bg-blue-900/30 border-blue-500/50 shadow-lg shadow-blue-900/20' if p == game else 'bg-slate-900/30 border-slate-700/50 opacity-70' }}">
+                <div class="text-[10px] font-bold uppercase tracking-wider mb-1 {{ 'text-blue-300' if p == game else 'text-slate-500' }}">{{ p.name }}</div>
+                <div class="text-lg font-black text-white">{{ p.score }}</div>
+                <div class="text-[10px] text-slate-400 font-bold mt-1 flex items-center gap-1">
+                    LEGS: {{ p.legs_won }}
+                    {% for i in range(p.legs_won) %}<span class="text-yellow-400 text-xs">★</span>{% endfor %}
+                </div>
+                <div class="text-[10px] text-blue-300 font-bold mt-1 flex items-center gap-1">
+                    AVG: {{ "%.2f"|format(p.average()) }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="flex-1 flex flex-col justify-center">
+            <h2 class="text-xl text-slate-400 font-medium">{{ game.name }}</h2>
+        <div class="text-6xl lg:text-8xl font-black text-white my-2 lg:my-4 tracking-tighter">{{ game.score }}</div>
+        
+        {% if status %}
+            <div class="inline-block bg-red-500/10 text-red-400 px-4 py-1 rounded-full text-sm font-bold animate-pulse border border-red-500/20">
+                {{ status }}
+            </div>
+        {% else %}
+            <div class="text-slate-500 text-sm font-mono">AVG: {{ "%.2f"|format(game.average()) }}</div>
+        {% endif %}
+
+        <!-- Current Turn History -->
+        <div class="mt-4 flex flex-col items-center justify-center gap-2">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">This Turn</span>
+            <div class="flex gap-2 min-h-[2rem]">
+                {% for dart in game.turn_darts %}
+                    <div class="bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-mono border border-slate-600">
+                        {{ dart }}
+                    </div>
+                {% else %}
+                    <div class="text-slate-600 text-sm italic">Waiting...</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Checkout Suggestion -->
+        {% if suggestion and game.score <= 170 %}
+        <div class="mt-6 bg-slate-900/50 rounded-xl p-3 border border-slate-700/50">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Checkout Guide</div>
+            <div class="flex flex-wrap justify-center gap-2">
+                {% if suggestion is string %}
+                    <span class="text-slate-400 font-mono text-sm">{{ suggestion }}</span>
+                {% else %}
+                    {% for step in suggestion %}
+                        <span class="bg-slate-700 text-blue-300 px-3 py-1 rounded-lg font-mono font-bold shadow-sm border border-slate-600 text-lg">{{ step }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700 flex-1 flex flex-col min-h-0">
+        {% if (game.game_type == 'x01' and game.score == 0) or (game.game_type == 'practice_20' and game.total_darts_thrown >= game.max_darts) %}
+        <div class="flex flex-col gap-4 h-full">
+            {% if match.is_over %}
+            
+            {% if game.game_type == 'practice_20' %}
+            <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
+                <h3 class="text-2xl font-bold text-white">Practice Finished!</h3>
+                <div class="flex gap-2">
+                    <a href="/restart" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                        Restart
+                    </a>
+                    <a href="/" class="bg-slate-600 hover:bg-slate-500 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                        Menu
+                    </a>
+                </div>
+            </div>
+            <div class="text-center text-blue-400 text-xl font-bold mb-2">Final Score: {{ game.score }}</div>
+            
+            <!-- Scatter Plot Chart -->
+            <div class="relative w-64 h-64 mx-auto bg-black rounded-full border-4 border-slate-600 shadow-2xl overflow-hidden mb-4">
+                <!-- Grid lines -->
+                <div class="absolute top-1/2 left-0 w-full h-px bg-slate-800"></div>
+                <div class="absolute left-1/2 top-0 h-full w-px bg-slate-800"></div>
+                <div class="absolute top-1/2 left-1/2 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-800"></div>
+                
+                <!-- Darts -->
+                {% for x, y in game.dart_coords %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <h3 class="text-3xl md:text-4xl font-bold text-white text-center py-4 shrink-0">Match Won!</h3>
+            <div class="text-center text-blue-400 text-xl font-bold mb-4">{{ game.name }} wins {{ game.legs_won }} - {{ match.players|reject('equalto', game)|map(attribute='legs_won')|first }}</div>
+            {% endif %}
+            
+            {% else %}
+            <h3 class="text-3xl md:text-4xl font-bold text-white text-center py-4 shrink-0">Leg Finished!</h3>
+            <form action="/game" method="POST" class="w-full flex-1">
+                <input type="hidden" name="action" value="next_leg">
+                <button type="submit" class="w-full h-full bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-3xl text-center text-4xl shadow-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
+                    Start Next Leg
+                </button>
+            </form>
+            {% endif %}
+
+            {% if match.is_over %}
+            {% if game.game_type != 'practice_20' %}
+            <a href="/restart" class="flex-1 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-3xl text-center text-4xl shadow-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
+                Restart Game
+            </a>
+            <a href="/" class="flex-1 w-full bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-3xl text-center text-4xl shadow-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
+                Return to Start
+            </a>
+            {% endif %}
+            
+            <!-- Game Statistics -->
+            <div class="flex-1 w-full bg-slate-900/50 rounded-3xl border-4 border-slate-700/50 p-4 flex flex-col justify-center gap-2">
+                {% if game.game_type == 'practice_20' %}
+                <div class="flex justify-center items-center h-full py-2">
+                    <svg viewBox="-110 -120 220 240" class="w-full h-full max-h-64 drop-shadow-2xl">
+                        <!-- Defs for gradients/filters -->
+                        <defs>
+                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="2" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+
+                        <!-- Segment 12 (Far Left) -->
+                        <path d="M0,0 L-70.7,-70.7 A100,100 0 0,1 -45.4,-89.1 Z" fill="#1e293b" stroke="#475569" stroke-width="1" class="hover:fill-slate-700 transition-colors" />
+                        <text x="0" y="-105" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(-36)">
+                            12
+                        </text>
+                        <text x="0" y="-75" fill="white" font-size="12" font-weight="black" text-anchor="middle" transform="rotate(-36)">
+                            {{ "%.0f"|format(game.stats_percentages['12']) }}%
+                        </text>
+
+                        <!-- Segment 5 (Left) -->
+                        <path d="M0,0 L-45.4,-89.1 A100,100 0 0,1 -15.6,-98.8 Z" fill="#1e293b" stroke="#475569" stroke-width="1" class="hover:fill-slate-700 transition-colors" />
+                        <text x="0" y="-105" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(-18)">
+                            5
+                        </text>
+                        <text x="0" y="-75" fill="white" font-size="12" font-weight="black" text-anchor="middle" transform="rotate(-18)">
+                            {{ "%.0f"|format(game.stats_percentages['5']) }}%
+                        </text>
+
+                        <!-- Segment 1 (Right) -->
+                        <path d="M0,0 L15.6,-98.8 A100,100 0 0,1 45.4,-89.1 Z" fill="#1e293b" stroke="#475569" stroke-width="1" class="hover:fill-slate-700 transition-colors" />
+                        <text x="0" y="-105" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(18)">
+                            1
+                        </text>
+                        <text x="0" y="-75" fill="white" font-size="12" font-weight="black" text-anchor="middle" transform="rotate(18)">
+                            {{ "%.0f"|format(game.stats_percentages['1']) }}%
+                        </text>
+
+                        <!-- Segment 18 (Far Right) -->
+                        <path d="M0,0 L45.4,-89.1 A100,100 0 0,1 70.7,-70.7 Z" fill="#1e293b" stroke="#475569" stroke-width="1" class="hover:fill-slate-700 transition-colors" />
+                        <text x="0" y="-105" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(36)">
+                            18
+                        </text>
+                        <text x="0" y="-75" fill="white" font-size="12" font-weight="black" text-anchor="middle" transform="rotate(36)">
+                            {{ "%.0f"|format(game.stats_percentages['18']) }}%
+                        </text>
+
+                        <!-- Segment 20 (Center) -->
+                        <path d="M0,0 L-15.6,-98.8 A100,100 0 0,1 15.6,-98.8 Z" fill="#0f172a" stroke="#475569" stroke-width="1" />
+                        
+                        <!-- Treble 20 -->
+                        <path d="M-9.4,-59.3 L-10.9,-69.1 A70,70 0 0,1 10.9,-69.1 L9.4,-59.3 A60,60 0 0,0 -9.4,-59.3 Z" fill="#ef4444" stroke="none" filter="url(#glow)" />
+                        
+                        <!-- Stats Text 20 -->
+                        <text x="0" y="-105" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">20</text>
+                        <text x="0" y="-75" fill="white" font-size="10" font-weight="black" text-anchor="middle">{{ "%.0f"|format(game.stats_percentages['20']) }}%</text>
+                        
+                        <text x="0" y="-63" fill="white" font-size="5" font-weight="black" text-anchor="middle" dominant-baseline="middle">{{ "%.0f"|format(game.stats_percentages['T20']) }}%</text>
+                    </svg>
+                </div>
+                {% else %}
+                <div class="grid grid-cols-2 gap-4 text-center h-full">
+                    <div class="flex flex-col justify-center bg-slate-800/50 rounded-2xl p-2">
+                        <span class="text-slate-400 text-sm uppercase font-bold tracking-wider">Darts</span>
+                        <span class="text-3xl lg:text-5xl font-black text-white">{{ game.total_darts_thrown }}</span>
+                    </div>
+                    <div class="flex flex-col justify-center bg-slate-800/50 rounded-2xl p-2">
+                        <span class="text-slate-400 text-sm uppercase font-bold tracking-wider">Average</span>
+                        <span class="text-3xl lg:text-5xl font-black text-white">{{ "%.1f"|format(game.average()) }}</span>
+                    </div>
+                    <div class="col-span-2 flex flex-col justify-center bg-slate-800/50 rounded-2xl p-2">
+                        <span class="text-slate-400 text-sm uppercase font-bold tracking-wider">Checkout</span>
+                        <div class="flex items-baseline justify-center gap-2">
+                            <span class="text-3xl lg:text-5xl font-black text-white">{{ game.checkouts_hit }}/{{ game.checkout_attempts }}</span>
+                            <span class="text-xl text-slate-400 font-bold">({{ "%.0f"|format(game.checkout_percentage) }}%)</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        
+        {% if (game.turn_darts|length == 3 or status == "BUST!") and game.score > 0 %}
+        <!-- Next Turn Button -->
+        <div class="flex flex-col h-full justify-center">
+            <form action="/game" method="POST" class="h-full">
+                <input type="hidden" name="action" value="next_turn">
+                <button type="submit" class="w-full h-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-3xl text-center text-4xl shadow-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3 animate-pulse">
+                    Next Player <span class="text-2xl">➔</span>
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <!-- Hidden Form for Submission -->
+        <form id="game-form" action="/game" method="POST" class="hidden">
+            <input type="hidden" name="action" value="throw">
+            <input type="text" name="dart" id="dart-input">
+        </form>
+
+        <!-- Multiplier Controls -->
+        <div class="flex gap-2 mb-2 shrink-0 h-14 lg:h-16">
+            <button id="btn-d" onclick="setMultiplier('D')" class="flex-1 text-xl lg:text-2xl rounded-lg font-bold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">Double</button>
+            <button id="btn-t" onclick="setMultiplier('T')" class="flex-1 text-xl lg:text-2xl rounded-lg font-bold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">Treble</button>
+        </div>
+
+        <!-- Numbers Grid -->
+        <div class="grid grid-cols-5 grid-rows-4 gap-2 mb-2 flex-1 min-h-0">
+            {% for i in range(1, 21) %}
+            <button onclick="submitThrow('{{ i }}')" class="w-full h-full flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white text-2xl lg:text-4xl font-bold rounded-lg transition-colors active:scale-95">
+                {{ i }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Specials -->
+        <div class="grid grid-cols-3 gap-2 shrink-0 h-14 lg:h-16">
+            <button onclick="submitThrow('25')" class="w-full h-full text-xl lg:text-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg transition-colors active:scale-95">25</button>
+            <button onclick="submitThrow('50')" class="w-full h-full text-xl lg:text-2xl bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors active:scale-95">BULL</button>
+            <button onclick="submitThrow('MISS')" class="w-full h-full text-xl lg:text-2xl bg-slate-600 hover:bg-slate-500 text-slate-200 font-bold rounded-lg transition-colors active:scale-95">MISS</button>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    let currentMultiplier = '';
+
+    function setMultiplier(mult) {
+        if (currentMultiplier === mult) {
+            currentMultiplier = '';
+        } else {
+            currentMultiplier = mult;
+        }
+        
+        // Helper to update button styles
+        const updateBtn = (id, active) => {
+            const btn = document.getElementById(id);
+            btn.className = active 
+                ? "flex-1 text-xl lg:text-2xl rounded-lg font-bold transition-colors bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                : "flex-1 text-xl lg:text-2xl rounded-lg font-bold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600";
+        };
+
+        updateBtn('btn-d', currentMultiplier === 'D');
+        updateBtn('btn-t', currentMultiplier === 'T');
+    }
+
+    function submitThrow(val) {
+        const input = document.getElementById('dart-input');
+        // Specials (25, 50, MISS) ignore the multiplier
+        if (['25', '50', 'MISS'].includes(val)) {
+            input.value = val;
+        } else {
+            input.value = currentMultiplier + val;
+        }
+        document.getElementById('game-form').submit();
+    }
+</script>
+{% endblock %}

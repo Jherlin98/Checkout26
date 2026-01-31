@@ -1,0 +1,14 @@
+{
+  "name": "darts-scorer",
+  "version": "1.0.0",
+  "description": "Darts scoring application",
+  "main": "app.py",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./static/css/output.css",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "tailwindcss": "^4.1.18"
+  }
+}

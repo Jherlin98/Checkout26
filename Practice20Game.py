@@ -111,6 +111,17 @@ class Practice20Game:
     def checkout_suggestion(self):
         return None
 
+    def export_session(self):
+        return {
+            "player": self.name,
+            "game_type": self.game_type,
+            "score": self.score,
+            "stats": self.stats,
+            "stats_percentages": self.stats_percentages,
+            "total_darts_thrown": self.total_darts_thrown,
+            "average": self.average()
+        }
+
     @property
     def total_darts_thrown(self):
         return len(self.history)

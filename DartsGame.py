@@ -9,7 +9,9 @@ class DartsGame:
         self.dart_coords = []
         self.turn_darts = []
         self.turn_dart_score = start_score
-        self.history = []
+        self.turns = []          # completed turns
+        self.current_turn = []  # darts in this turn
+
         self.checkout_attempts = 0
         self.checkouts_hit = 0
         self.legs_won = 0
@@ -20,6 +22,8 @@ class DartsGame:
 
         score, is_double = mg.parse_score(dart_input)
         new_score = self.score - score
+
+        dart= {'input': dart_input, 'score': score,  'is_double': is_double}
 
         # Check for bust conditions
         if new_score < 0 or new_score == 1:
@@ -33,23 +37,27 @@ class DartsGame:
         # Track checkout attempts (Score is 50 or <= 40 and even)
         if self.score == 50 or (self.score <= 40 and self.score % 2 == 0 and self.score > 0):
             self.checkout_attempts += 1
-
-        self.history.append(self.score)
+        
         self.score = new_score
-        self.turn_darts.append(dart_input)
-
+        self.current_turn.append(dart)
         if self.score == 0:
             self.checkouts_hit += 1
             return "WIN"
+        
+        if len(self.current_turn) == 3:
+            self.end_turn()
+            return "TURN_OVER"
         
         return "OK"
 
     def _bust(self):
         self.score = self.turn_dart_score
+        self.current_turn = []
 
     def end_turn(self):
-        self.turn_dart_score = self.score
-        self.turn_darts = []
+        if self.current_turn:
+            self.turns.append(self.current_turn)
+        self.current_turn = []
 
     def reset(self):
         self.score = self.start_score
@@ -59,41 +67,77 @@ class DartsGame:
         self.checkout_attempts = 0
         self.checkouts_hit = 0
         self.dart_coords = []
+        self.turns = []
+        self.current_turn = []
 
-    def undo(self):
-        if self.history:
-            self.score = self.history.pop()
-            if self.dart_coords:
-                self.dart_coords.pop()
+    def undo_last_dart(self):
+        if self.current_turn:
+            dart= self.current_turn.pop()
+            self.score += dart['score']
+            return
+        if self.turns:
+            last_turn = self.turns.pop()
+            dart= last_turn.pop()
+            self.score += dart['score']
+            self.current_turn = last_turn
+
+    def undo_last_turn(self):
+        if not self.turns:
+            return
+
+        last_turn = self.turns.pop()
+        self.score += sum(d["score"] for d in last_turn)
+
 
     def average(self):
-        total_points = self.start_score - self.score  # Calculate total points scored
-        total_darts = len(self.history) + len(self.turn_darts)  # Total darts thrown
+        total_darts = sum(len(t) for t in self.turns) + len(self.current_turn)
         if total_darts == 0:
             return 0.0
+        total_points = self.start_score - self.score
         return (total_points / total_darts) * 3
+    
+    def highest_score(self):
+        highest = 0
+        for turn in self.turns:
+            turn_score = sum(d['score'] for d in turn)
+            if turn_score > highest:
+                highest = turn_score
+        return highest
 
     def get_turn_score(self):
-        total = 0
-        for dart in self.turn_darts:
-            score, _ = mg.parse_score(dart)
-            total += score
-        return total
+        return sum(d['score'] for d in self.current_turn)
     
     def checkout_suggestion(self):
         suggestion = CHECKOUTS.get(self.score)
         if suggestion is None:
             return None
 
-        darts_remaining = 3 - len(self.turn_darts)
+        darts_remaining = 3 - len(self.current_turn)
         if darts_remaining > 0 and len(suggestion) > darts_remaining:
             return suggestion[:darts_remaining]
             
         return suggestion
 
+    def export_session(self):
+        all_turns = self.turns.copy()
+        if self.current_turn:
+            all_turns.append(self.current_turn.copy())
+        return {
+            "player": self.name,
+            "start_score": self.start_score,
+            "turns": all_turns,
+            "checkout_attempts": self.checkout_attempts,
+            "checkouts_hit": self.checkouts_hit,
+            "average": self.average(),
+            "highest_score":self.highest_score(),
+            "total_darts_thrown": self.total_darts_thrown,
+            "is_winner": self.score == 0
+        }
+
+
     @property
     def total_darts_thrown(self):
-        return len(self.history) + len(self.turn_darts)
+        return sum(len(t) for t in self.turns) + len(self.current_turn)
 
     @property
     def checkout_percentage(self):

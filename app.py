@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
+import json
 from DartsGame import DartsGame
 from Practice20Game import Practice20Game
 from scoring_logic import get_coords_from_score
@@ -11,7 +12,7 @@ class Match:
     def __init__(self, players, best_of=1):
         self.players = players
         self.current_player_index = 0
-        self.best_of = best_of
+        self.best_of = int(best_of)
         self.starting_player_index = 0
 
     @property
@@ -29,8 +30,19 @@ class Match:
 
     @property
     def is_over(self):
+        if self.best_of == 1:
+            return any(p.legs_won >= 1 for p in self.players)
         legs_needed = (self.best_of // 2) + 1
         return any(p.legs_won >= legs_needed for p in self.players)
+    
+    def export_session(self):
+        """Export the full multiplayer session as a dict."""
+        return {
+            "players": [player.export_session() for player in self.players],
+            "current_player_index": self.current_player_index,
+            "best_of": self.best_of,
+            "starting_player_index": self.starting_player_index
+        }
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -85,11 +97,23 @@ def game_view():
             dart = request.form.get("dart")
             coords = get_coords_from_score(dart)
             result = game.throw(dart, coords=coords)
+            
+            if result == "TURN_OVER":
+                # Check for 180 in the last turn
+                last_turn_score = 0
+                if hasattr(game, 'turns') and game.turns:
+                    last_turn_score = sum(d['score'] for d in game.turns[-1])
+                
+                is_180 = (last_turn_score == 180)
+
+                match.next_player()
+                return redirect(url_for("game_view", transition="true", one80="true" if is_180 else None))
+
             status = ""
             if result == "WIN":
                 game.legs_won += 1
                 if match.is_over:
-                    status = "🎯 MATCH WON!"
+                    status = "🎯 GAME SHOT!"
                 else:
                     status = "🎯 LEG WON!"
             elif result == "BUST":
@@ -98,14 +122,35 @@ def game_view():
                 status = "No Double!"
             return redirect(url_for("game_view", status=status if status else None))
 
+        elif action == "undo":
+            if hasattr(game, "undo_last_dart"):
+                game.undo_last_dart()
+            elif hasattr(game, "undo"):
+                game.undo()
+            return redirect(url_for("game_view"))
+
+        elif action == "export":
+            if hasattr(match, "export_session"):
+                data = match.export_session()
+                return Response(
+                    json.dumps(data, indent=2),
+                    mimetype="application/json",
+                    headers={"Content-Disposition": 'attachment;filename="darts_match_session.json"'}
+                )
+            return redirect(url_for("game_view"))
+
     game = match.current_player
     status = request.args.get("status", "")
+    transition = request.args.get("transition")
+    one80 = request.args.get("one80")
     return render_template(
         "game.html",
         match=match,
         game=game,
         status=status,
-        suggestion=game.checkout_suggestion()
+        suggestion=game.checkout_suggestion(),
+        transition=transition,
+        one80=one80
     )
 
 

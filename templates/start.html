@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block header %}
+<!-- The header is moved into the content block for better centering on the start page. -->
+{% endblock %}
+
 {% block content %}
 <style>
     /* Custom styles to ensure radio buttons work without rebuilding CSS */
@@ -13,8 +17,10 @@
         box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.2); /* shadow-blue-900/20 */
     }
 </style>
-<div class="bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700">
-    <form action="/" method="POST" class="space-y-6">
+<div class="w-full h-full flex items-center justify-center py-4">
+    <div class="bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700 w-full max-w-2xl max-h-full overflow-y-auto">
+        <h1 class="text-center text-2xl md:text-3xl font-bold text-blue-400 tracking-tight mb-6">🎯 Checkout 26</h1>
+        <form action="/" method="POST" class="space-y-6">
         <div>
             <label for="names" class="block text-sm font-medium text-slate-400 mb-2">Player Names (comma separated)</label>
             <textarea name="names" id="names" placeholder="Player 1, Player 2..." rows="3"
@@ -76,7 +82,8 @@
         </div>
 
         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg shadow-blue-900/20">Start Game</button>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>

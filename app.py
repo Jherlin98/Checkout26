@@ -96,31 +96,33 @@ def game_view():
         elif action == "throw":
             dart = request.form.get("dart")
             coords = get_coords_from_score(dart)
-            result = game.throw(dart, coords=coords)
-            
-            if result == "TURN_OVER":
-                # Check for 180 in the last turn
-                last_turn_score = 0
-                if hasattr(game, 'turns') and game.turns:
-                    last_turn_score = sum(d['score'] for d in game.turns[-1])
-                
-                is_180 = (last_turn_score == 180)
 
+            result, is_180 = game.throw(dart, coords=coords)
+
+            if result == "TURN_OVER":
                 match.next_player()
-                return redirect(url_for("game_view", transition="true", one80="true" if is_180 else None))
+                return redirect(
+                    url_for(
+                        "game_view",
+                        transition="true",
+                        one80="true" if is_180 else None
+                    )
+                )
 
             status = ""
             if result == "WIN":
                 game.legs_won += 1
-                if match.is_over:
-                    status = "🎯 GAME SHOT!"
-                else:
-                    status = "🎯 LEG WON!"
-            elif result == "BUST":
-                status = "BUST!"
-            elif result == "NO_DOUBLE":
-                status = "No Double!"
+                status = "🎯 GAME SHOT!" if match.is_over else "🎯 LEG WON!"
+            elif result == "BUST" or result == "NO_DOUBLE":
+                match.next_player()
+                return redirect(url_for(
+                    "game_view", 
+                    transition="true", 
+                    bust="BUST!" if result == "BUST" else "No Double!"
+                ))
+
             return redirect(url_for("game_view", status=status if status else None))
+
 
         elif action == "undo":
             if hasattr(game, "undo_last_dart"):
@@ -143,6 +145,7 @@ def game_view():
     status = request.args.get("status", "")
     transition = request.args.get("transition")
     one80 = request.args.get("one80")
+    bust = request.args.get("bust")
     return render_template(
         "game.html",
         match=match,
@@ -150,7 +153,8 @@ def game_view():
         status=status,
         suggestion=game.checkout_suggestion(),
         transition=transition,
-        one80=one80
+        one80=one80,
+        bust=bust
     )
 
 

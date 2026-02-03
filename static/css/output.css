@@ -850,6 +850,25 @@
     opacity: 0.5;
   }
 }
+@keyframes bustFlash {
+  0%   { background-color: rgba(239, 68, 68, 0.0); }
+  25%  { background-color: rgba(239, 68, 68, 0.25); }
+  50%  { background-color: rgba(239, 68, 68, 0.15); }
+  100% { background-color: rgba(239, 68, 68, 0.0); }
+}
+
+@keyframes bustShake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+.bust-effect {
+  animation: bustFlash 600ms ease-out, bustShake 300ms ease-in-out;
+}
+
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {

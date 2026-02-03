@@ -56,9 +56,10 @@ class Practice20Game:
         self.turn_darts.append(dart_input)
         
         if self.total_darts_thrown >= self.max_darts:
-            return "WIN"
-        
-        return "OK"
+            return ("WIN", False)
+        #Can return straight False, as 180 not tracked in thiss gameMode
+        return ("OK", False)
+
 
     def reset(self):
         self.score = 0

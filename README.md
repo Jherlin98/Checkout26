@@ -1,6 +1,6 @@
 # Darts Scorer
 
-A web-based darts scoring application built with Flask and Tailwind CSS.
+A LOCAL web-based darts scoring application built with Flask and Tailwind CSS.
 
 ## Features
 

@@ -8,15 +8,17 @@ class DartsGame:
         self.game_type = "x01"
         self.dart_coords = []
         self.turn_darts = []
-        self.turn_dart_score = start_score
         self.turns = []          # completed turns
         self.current_turn = []  # darts in this turn
-
+        self.turn_start_score = start_score
         self.checkout_attempts = 0
         self.checkouts_hit = 0
         self.legs_won = 0
 
     def throw(self, dart_input, coords=None):
+        is_180 = False
+
+
         if coords:
             self.dart_coords.append(coords)
 
@@ -28,11 +30,13 @@ class DartsGame:
         # Check for bust conditions
         if new_score < 0 or new_score == 1:
             self._bust()
-            return "BUST"
+            return "BUST", False
+
+
         # Check for double out condition
         if new_score == 0 and not is_double:
             self._bust()
-            return "NO_DOUBLE"
+            return "NO_DOUBLE", False
         
         # Track checkout attempts (Score is 50 or <= 40 and even)
         if self.score == 50 or (self.score <= 40 and self.score % 2 == 0 and self.score > 0):
@@ -42,22 +46,40 @@ class DartsGame:
         self.current_turn.append(dart)
         if self.score == 0:
             self.checkouts_hit += 1
-            return "WIN"
+            return ("WIN", False)
         
         if len(self.current_turn) == 3:
+            turn_score = sum(d['score'] for d in self.current_turn)
+
+            is_180 = (
+                turn_score == 180 and
+                self.turn_start_score >= 180
+            )
+
             self.end_turn()
-            return "TURN_OVER"
-        
-        return "OK"
+            return ("TURN_OVER", is_180)
+
+                
+        return ("OK", False)
+
 
     def _bust(self):
-        self.score = self.turn_dart_score
+        self.score = self.turn_start_score
+        # Busts: If a player busts on their first or second dart of a turn, all three darts for that visit are counted as thrown.
+        busted_turn = [
+            {'input': 'BUST', 'score': 0, 'is_double': False},
+            {'input': '', 'score': 0, 'is_double': False},
+            {'input': '', 'score': 0, 'is_double': False}
+        ]
+        self.turns.append(busted_turn)
         self.current_turn = []
 
     def end_turn(self):
         if self.current_turn:
             self.turns.append(self.current_turn)
         self.current_turn = []
+        self.turn_start_score = self.score
+
 
     def reset(self):
         self.score = self.start_score
@@ -76,6 +98,13 @@ class DartsGame:
             self.score += dart['score']
             return
         if self.turns:
+            # Check if the last turn was a bust. If so, just remove it.
+            # This correctly resets the player to the start of their turn
+            # without attempting to restore a partial (busted) turn.
+            if self.turns[-1] and self.turns[-1][0].get('input') == 'BUST':
+                self.turns.pop()
+                return
+
             last_turn = self.turns.pop()
             dart= last_turn.pop()
             self.score += dart['score']

@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, Response
+from flask import Flask, render_template, request, redirect, url_for, Response, session
 import json
+import uuid
 from DartsGame import DartsGame
 from Practice20Game import Practice20Game
 from scoring_logic import get_coords_from_score
 
 app = Flask(__name__)
-match = None
+app.secret_key = "change_this_to_a_secure_random_key_for_hosting"
+games = {}
 
 
 class Match:
@@ -47,7 +49,6 @@ class Match:
 
 @app.route("/", methods=["GET", "POST"])
 def start():
-    global match
     if request.method == "POST":
         names_input = request.form.get("names", "Player")
         start_score = int(request.form.get("start_score", 501))
@@ -68,7 +69,10 @@ def start():
             else:
                 players.append(DartsGame(name, start_score))
         
-        match = Match(players, best_of)
+        new_match = Match(players, best_of)
+        game_id = str(uuid.uuid4())
+        games[game_id] = new_match
+        session["game_id"] = game_id
         
         return redirect(url_for("game_view"))
     return render_template("start.html")
@@ -76,8 +80,10 @@ def start():
 
 @app.route("/game", methods=["GET", "POST"])
 def game_view():
-    global match
-    if match is None:
+    game_id = session.get("game_id")
+    match = games.get(game_id)
+    
+    if not match:
         return redirect(url_for("start"))
 
     if request.method == "POST":
@@ -160,7 +166,9 @@ def game_view():
 
 @app.route("/restart")
 def restart():
-    global match
+    game_id = session.get("game_id")
+    match = games.get(game_id)
+    
     if match:
         # Re-create players with same names and start score
         new_players = []
@@ -169,16 +177,18 @@ def restart():
                 new_players.append(Practice20Game(p.name, max_darts=p.max_darts))
             else:
                 new_players.append(DartsGame(p.name, start_score=p.start_score))
-        match = Match(new_players, match.best_of)
+        games[game_id] = Match(new_players, match.best_of)
     return redirect(url_for("game_view"))
 
 
 @app.route("/quit")
 def quit():
-    global match
-    match = None
+    game_id = session.get("game_id")
+    if game_id and game_id in games:
+        del games[game_id]
+    session.pop("game_id", None)
     return "<html><body style='background-color: #0f172a; color: #94a3b8; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;'><h1>Game Quit. You can close this tab.</h1></body></html>"
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run()

@@ -4,6 +4,7 @@ import uuid
 from DartsGame import DartsGame
 from Practice20Game import Practice20Game
 from scoring_logic import get_coords_from_score
+import os
 
 app = Flask(__name__)
 app.secret_key = "change_this_to_a_secure_random_key_for_hosting"
@@ -189,6 +190,6 @@ def quit():
     session.pop("game_id", None)
     return "<html><body style='background-color: #0f172a; color: #94a3b8; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;'><h1>Game Quit. You can close this tab.</h1></body></html>"
 
-
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
